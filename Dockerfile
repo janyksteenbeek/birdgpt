@@ -8,6 +8,5 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /app/birdgpt ./cmd/main.go
 FROM alpine:latest
 WORKDIR /app
 COPY --from=builder /app/birdgpt .
-COPY config.yaml .
 VOLUME ["/app/config.yaml", "/app/credentials.json"]
 CMD ["/app/birdgpt"] 
