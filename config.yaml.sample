@@ -3,6 +3,7 @@ moneybird:
   client_secret: ""
   redirect_uri: "http://localhost:8080/callback"
   token: ""
+  country: "NL"
   admin_id: ""
 
 gmail:

@@ -23,6 +23,7 @@ func NewMoneybirdProcessor(cfg *config.Config, moneybirdClient *moneybird.Client
 }
 
 func (p *MoneybirdProcessor) ProcessInvoice(ctx context.Context, invoiceData *openai.InvoiceData) error {
+	log.Printf("Processing invoice for %s", invoiceData.CompanyName)
 	contacts, err := p.moneybird.SearchContacts(invoiceData.CompanyName)
 	if err != nil {
 		return fmt.Errorf("failed to search contacts: %w", err)

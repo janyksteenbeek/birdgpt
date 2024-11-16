@@ -1,10 +1,12 @@
 package openai
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/ledongthuc/pdf"
 	"github.com/sashabaranov/go-openai"
 	"github.com/sashabaranov/go-openai/jsonschema"
 	"log"
@@ -55,7 +57,7 @@ func (c *Client) ProcessInvoice(ctx context.Context, emailBody string, attachmen
 		log.Fatalf("GenerateSchemaForType error: %v", err)
 	}
 
-	systemMsg := `You are an invoice processing assistant. First determine if the content contains an invoice. 
+	systemMsg := `You are an invoice processing assistant. First determine if the content contains an invoice.  
 If it does, extract the relevant information. Pay special attention to KVK (Chamber of Commerce) and BTW (VAT) numbers, 
 which are often found in the header or footer of Dutch invoices. BTW numbers typically start with NL and KVK numbers 
 are 8 digits. Parse the address into separate components.
@@ -70,13 +72,21 @@ Use ISO country codes for the country field.`
 	userContent += "Email content:\n" + emailBody + "\n\n"
 
 	for i, attachment := range attachments {
-		userContent += fmt.Sprintf("Attachment %d content:\n%s\n\n", i+1, base64.StdEncoding.EncodeToString(attachment))
+		if isPDF(attachment) {
+			text, err := extractTextFromPDF(attachment)
+			if err != nil {
+				return nil, fmt.Errorf("failed to extract text from PDF attachment %d: %w", i+1, err)
+			}
+			userContent += fmt.Sprintf("Attachment %d content (PDF):\n%s\n\n", i+1, text)
+		} else {
+			userContent += fmt.Sprintf("Attachment %d content:\n%s\n\n", i+1, base64.StdEncoding.EncodeToString(attachment))
+		}
 	}
 
 	resp, err := c.client.CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
-			Model: openai.GPT4oMini,
+			Model: openai.GPT4o,
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleSystem,
@@ -112,54 +122,31 @@ Use ISO country codes for the country field.`
 	return &invoiceData, nil
 }
 
-func (c *Client) ValidateInvoice(ctx context.Context, invoice *InvoiceData) (bool, string, error) {
-	if !invoice.IsInvoice {
-		return false, "not an invoice", nil
-	}
+func isPDF(data []byte) bool {
+	return len(data) > 4 && string(data[:4]) == "%PDF"
+}
 
-	prompt := fmt.Sprintf(`Validate this invoice data and respond with "VALID" or "INVALID" followed by a reason if invalid:
-
-Company: %s
-Invoice Number: %s
-Total Amount: %.2f
-Number of Items: %d
-KVK Number: %s
-VAT Number: %s
-Address: %s, %s %s, %s
-
-Validation rules:
-1. All required fields must be present
-2. KVK number should be 8 digits (if provided)
-3. VAT number should start with NL and be in correct format (if provided)
-4. Total amount should match line items
-5. Address should have all components (street, city, zipcode, country)
-6. Country code should be valid ISO code
-`, invoice.CompanyName, invoice.InvoiceNumber, invoice.TotalAmount, len(invoice.Items),
-		invoice.KvkNumber, invoice.VatNumber, invoice.ContactInfo.Street,
-		invoice.ContactInfo.City, invoice.ContactInfo.ZipCode, invoice.ContactInfo.Country)
-
-	resp, err := c.client.CreateChatCompletion(
-		ctx,
-		openai.ChatCompletionRequest{
-			Model: openai.GPT4oMini,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: prompt,
-				},
-			},
-		},
-	)
+func extractTextFromPDF(data []byte) (string, error) {
+	reader, err := pdf.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
-		return false, "", fmt.Errorf("validation failed: %w", err)
+		return "", fmt.Errorf("failed to create PDF reader: %w", err)
 	}
 
-	response := resp.Choices[0].Message.Content
-	isValid := response[:5] == "VALID"
-	reason := response[5:]
-	if !isValid {
-		reason = response[7:]
+	var text string
+	numPages := reader.NumPage()
+
+	for pageNum := 1; pageNum <= numPages; pageNum++ {
+		page := reader.Page(pageNum)
+		if page.V.IsNull() {
+			continue
+		}
+
+		extractedText, err := page.GetPlainText(nil)
+		if err != nil {
+			return "", fmt.Errorf("failed to extract text from page %d: %w", pageNum, err)
+		}
+		text += extractedText
 	}
 
-	return isValid, reason, nil
+	return text, nil
 }
