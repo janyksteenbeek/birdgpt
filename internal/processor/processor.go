@@ -66,10 +66,10 @@ func (p *Processor) processNewEmails(ctx context.Context) error {
 				continue
 			}
 		}
+	}
 
-		if err := p.emailProcessor.UpdateLastProcessed(email); err != nil {
-			log.Printf("Failed to update last processed time: %v", err)
-		}
+	if err := p.emailProcessor.UpdateLastProcessed(); err != nil {
+		log.Printf("Failed to update last processed time: %v", err)
 	}
 
 	return nil

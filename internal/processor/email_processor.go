@@ -45,8 +45,8 @@ func (p *EmailProcessor) ProcessEmails(ctx context.Context) ([]gmail.Email, erro
 	return emails, nil
 }
 
-func (p *EmailProcessor) UpdateLastProcessed(email gmail.Email) error {
-   p.lastUpdate = email.Date.Add(time.Second)
+func (p *EmailProcessor) UpdateLastProcessed() error {
+   p.lastUpdate = time.Now()
    p.cfg.App.LastUpdate = p.lastUpdate.Format(time.RFC3339)
    
    if err := config.SaveConfig(p.cfg); err != nil {
