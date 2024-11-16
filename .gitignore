@@ -1,0 +1,15 @@
+/.idea
+.DS_Store
+/dist
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+go.work
+config.yaml
+credentials.json
+birdgpt

@@ -1,0 +1,19 @@
+moneybird:
+  client_id: ""
+  client_secret: ""
+  redirect_uri: "http://localhost:8080/callback"
+  token: ""
+  admin_id: ""
+
+gmail:
+  credentials_file: "credentials.json"
+  token: ""
+  search_label: "Invoices"
+
+openai:
+  api_key: ""
+
+app:
+  last_update: "2024-01-01T00:00:00Z"
+  sleep_time: "5m"
+  trigger_word: "invoice" 
