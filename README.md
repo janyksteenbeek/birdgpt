@@ -2,6 +2,8 @@
 
 BirdGPT automatically processes invoices from your Gmail inbox and adds them to Moneybird. It uses GPT-4o to extract invoice details and can handle Dutch KVK and BTW numbers.
 
+> USE AT OWN RISK FOR NOW: I highly recommend testing the application with a separate Moneybird administration before using it with your actual administration. The application is still in development and may contain bugs. You can create a sandbox administration for free [here](https://moneybird.com/administrations/sandboxes/new).
+
 
 - Automatically monitors Gmail for new invoices
 - Extracts invoice details using GPT-4o
@@ -63,8 +65,6 @@ On first run:
 1. You'll be prompted to visit a URL for Gmail authorization
 2. After authorizing, copy the code and paste it back in the terminal
 3. The application will start monitoring your emails
-
-> I highly recommend testing the application with a separate Moneybird administration before using it with your actual administration. The application is still in development and may contain bugs. You can create a sandbox administration for free [here](https://moneybird.com/administrations/sandboxes/new).
 
 ## License
 
