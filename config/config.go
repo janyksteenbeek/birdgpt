@@ -83,8 +83,18 @@ func LoadConfig() (*Config, error) {
 }
 
 func SaveConfig(config *Config) error {
-	viper.Set("moneybird.token", config.Moneybird.Token)
-	viper.Set("gmail.token", config.Gmail.Token)
-	viper.Set("app.last_update", config.App.LastUpdate)
-	return viper.WriteConfig()
+    viper.Set("moneybird.token", config.Moneybird.Token)
+    viper.Set("gmail.token", config.Gmail.Token)
+    viper.Set("app.last_update", config.App.LastUpdate)
+    
+    if err := viper.WriteConfig(); err != nil {
+        return fmt.Errorf("writing config: %w", err)
+    }
+    
+    // Force viper to read the config file again
+    if err := viper.ReadInConfig(); err != nil {
+        return fmt.Errorf("reloading config: %w", err)
+    }
+    
+    return nil
 }
